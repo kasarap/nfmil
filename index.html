@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>NF Milspec Premix Calculator v1 | nfmil.jonmercado.com</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #080A0D;
+      --bg2:          #0D1117;
+      --card:         #111820;
+      --card2:        #161E2B;
+      --card3:        #1C2535;
+      --border:       #1E2D40;
+      --border2:      #2A3D55;
+      --text:         #E8EDF5;
+      --muted:        #6B8098;
+      --muted2:       #8A9DB5;
+      --accent:       #E8003D;
+      --accent2:      #B8002F;
+      --accent-glow:  rgba(232,0,61,.20);
+      --accent-dim:   rgba(232,0,61,.08);
+      --blue:         #2E8CE8;
+      --blue-bg:      rgba(46,140,232,.10);
+      --blue-border:  rgba(46,140,232,.30);
+      --green:        #1DB974;
+      --green-bg:     rgba(29,185,116,.10);
+      --green-border: rgba(29,185,116,.30);
+      --amber:        #F5A623;
+      --amber-bg:     rgba(245,166,35,.10);
+      --amber-border: rgba(245,166,35,.30);
+      --teal:         #00C9B1;
+      --teal-bg:      rgba(0,201,177,.10);
+      --teal-border:  rgba(0,201,177,.30);
+      --shadow:       0 12px 40px rgba(0,0,0,.8);
+      --shadow-sm:    0 4px 16px rgba(0,0,0,.5);
+      --radius:       14px;
+      --radius-sm:    8px;
+      font-family: 'SF Pro Display', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Subtle grid overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(46,140,232,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(46,140,232,.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top red accent bar */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent) 70%, transparent);
+      z-index: 100;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      width: min(960px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 16px 0 60px;
+    }
+
+    /* ─── Header ───────────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding: 14px 0 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .headerLeft { display: flex; flex-direction: column; gap: 5px; }
+
+    .logoRow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logoBadge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -.5px;
+      flex-shrink: 0;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -.4px;
+      color: #fff;
+    }
+
+    .header h1 span { color: var(--accent); }
+
+    .headerSub {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: .3px;
+    }
+
+    .headerRight {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      padding-top: 4px;
+    }
+
+    /* ─── Pills ────────────────────────────────────────────────────── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border: 1px solid var(--border2);
+      border-radius: 999px;
+      background: var(--card);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .4px;
+      text-transform: uppercase;
+    }
+    .pill.ok    { border-color: var(--green-border);  color: var(--green);  background: var(--green-bg); }
+    .pill.live  { border-color: var(--blue-border);   color: var(--blue);   background: var(--blue-bg); }
+    .pill.warn  { border-color: var(--amber-border);  color: var(--amber);  background: var(--amber-bg); }
+
+    /* ─── Sections ─────────────────────────────────────────────────── */
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .section-label-text {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .section-label-text.accent { color: var(--accent); }
+    .section-label-text.blue   { color: var(--blue); }
+    .section-label-text.teal   { color: var(--teal); }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* ─── Card ─────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 14px;
+    }
+
+    /* ─── Input Grid ───────────────────────────────────────────────── */
+    .inputGrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .field { display: grid; gap: 5px; min-width: 0; }
+
+    .lbl {
+      font-size: 10px;
+      color: var(--muted2);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+    }
+
+    .lbl em {
+      font-style: normal;
+      color: var(--muted);
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    input, select {
+      width: 100%;
+      font-size: 15px;
+      padding: 10px 12px;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      outline: none;
+      background: var(--card2);
+      color: var(--text);
+      min-width: 0;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(46,140,232,.18);
+    }
+    input::placeholder { color: var(--muted); }
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    /* ─── Results Grid ─────────────────────────────────────────────── */
+    .resultsGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .resultCard {
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .resultCard::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      border-radius: 10px 0 0 10px;
+    }
+    .resultCard.water::before { background: var(--blue); }
+    .resultCard.foam::before  { background: var(--accent); }
+
+    .resultTitle {
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .resultMain {
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .resultUnit {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 3px;
+    }
+
+    .resultAltRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .resultAlt {
+      font-size: 12px;
+      color: var(--muted2);
+      background: var(--card3);
+      padding: 3px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-variant-numeric: tabular-nums;
+    }
+    .resultAlt strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* ─── Calc Note ────────────────────────────────────────────────── */
+    .calcNote {
+      font-size: 10.5px;
+      color: var(--muted);
+      line-height: 1.8;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── EN Water Table ───────────────────────────────────────────── */
+    .enTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2px;
+    }
+    .enTable thead tr {
+      background: var(--card3);
+      border-bottom: 1px solid var(--border2);
+    }
+    .enTable th {
+      padding: 8px 12px;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .enTable th.right  { text-align: right; }
+    .enTable th.center { text-align: center; }
+    .enTable tbody tr  {
+      border-bottom: 1px solid var(--border);
+      transition: background .1s;
+    }
+    .enTable tbody tr:last-child { border-bottom: none; }
+    .enTable tbody tr:hover { background: rgba(255,255,255,.025); }
+    .enTable td {
+      padding: 10px 12px;
+      font-size: 13px;
+      vertical-align: middle;
+      color: var(--muted2);
+      font-variant-numeric: tabular-nums;
+    }
+    .enTable td.right  { text-align: right; }
+    .enTable td.center { text-align: center; }
+    .enTable td.val {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .enTable td.sub-val {
+      font-size: 12px;
+      color: var(--muted2);
+    }
+
+    .enInputRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .unitToggle {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .unitToggle button {
+      flex: 1;
+      padding: 10px 14px;
+      background: var(--card2);
+      border: none;
+      color: var(--muted2);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      white-space: nowrap;
+    }
+    .unitToggle button.active {
+      background: var(--teal);
+      color: #000;
+    }
+
+    /* additive type labels */
+    .chem-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .chem-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .chem-badge.mgcl2 {
+      background: var(--teal-bg);
+      border: 1px solid var(--teal-border);
+      color: var(--teal);
+    }
+    .chem-badge.cacl2 {
+      background: var(--amber-bg);
+      border: 1px solid var(--amber-border);
+      color: var(--amber);
+    }
+
+    /* ─── Section Divider Label for EN table ─── */
+    .chemRow td { padding-top: 6px; padding-bottom: 6px; }
+
+    /* ─── Status Bar ───────────────────────────────────────────────── */
+    .statusBar {
+      position: sticky;
+      bottom: 0;
+      margin-top: 12px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(13,17,23,.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 20;
+    }
+    .statusBarInner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .statusLeft, .statusRight { display: flex; align-items: center; gap: 8px; }
+    .statusDot {
+      width: 7px; height: 7px;
+      border-radius: 999px;
+      background: var(--green);
+      flex-shrink: 0;
+      box-shadow: 0 0 8px var(--green);
+    }
+    .statusUrl {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: .3px;
+    }
+
+    /* ─── Empty / Placeholder ──────────────────────────────────────── */
+    .placeholder {
+      color: var(--muted);
+      font-size: 13px;
+      font-style: italic;
+    }
+
+    /* ─── Responsive ───────────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .wrap        { width: calc(100vw - 16px); padding: 12px 0 60px; }
+      .header h1   { font-size: 17px; }
+      .inputGrid   { grid-template-columns: 1fr 1fr; }
+      .resultsGrid { grid-template-columns: 1fr; }
+      .resultMain  { font-size: 24px; }
+      .enInputRow  { grid-template-columns: 1fr 1fr; }
+      .enInputRow .unitToggle { grid-column: 1 / -1; }
+    }
+    @media (max-width: 400px) {
+      .inputGrid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="headerLeft">
+      <div class="logoRow">
+        <div class="logoBadge">NF</div>
+        <h1><span>Milspec</span> Premix Calculator</h1>
+      </div>
+      <div class="headerSub">National Foam · nfmil.jonmercado.com</div>
+    </div>
+    <div class="headerRight">
+      <span id="liveLabel" class="pill">Enter values</span>
+    </div>
+  </header>
+
+  <!-- ── Premix Inputs ── -->
+  <div class="card">
+    <div class="section-label">
+      <span class="section-label-text accent">Premix Parameters</span>
+      <span class="section-line"></span>
+    </div>
+    <div class="inputGrid">
+      <div class="field">
+        <div class="lbl">Total Solution Mix <em>(gal)</em></div>
+        <input type="number" id="totalMix" inputmode="decimal" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <div class="lbl">Percentage <em>(%)</em></div>
+        <input type="number" id="percentage" inputmode="decimal" placeholder="e.g. 1.5 or 3.1" min="0" max="100" step="0.01" />
+      </div>
+      <div class="field">
+        <div class="lbl">Specific Gravity <em>(foam)</em></div>
+        <input type="number" id="specificGravity" inputmode="decimal" placeholder="e.g. 1.04" step="0.001" min="0.1" value="1.04" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Calculated Results ── -->
+  <div class="card">
+    <div class="section-label">
+      <span class="section-label-text blue">Calculated Results</span>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="resultsGrid">
+
+      <!-- Water -->
+      <div class="resultCard water">
+        <div class="resultTitle">Water Required</div>
+        <div class="resultMain" id="rWaterLbs">—<span class="resultUnit">lbs</span></div>
+        <div class="resultAltRow">
+          <span class="resultAlt"><strong id="rWaterKg">—</strong> kg</span>
+          <span class="resultAlt"><strong id="rWaterGal">—</strong> gal</span>
+          <span class="resultAlt"><strong id="rWaterLtr">—</strong> L</span>
+        </div>
+      </div>
+
+      <!-- Foam Concentrate -->
+      <div class="resultCard foam">
+        <div class="resultTitle">Foam Concentrate</div>
+        <div class="resultMain" id="rFoamLbs">—<span class="resultUnit">lbs</span></div>
+        <div class="resultAltRow">
+          <span class="resultAlt"><strong id="rFoamKg">—</strong> kg</span>
+          <span class="resultAlt"><strong id="rFoamGal">—</strong> gal</span>
+          <span class="resultAlt"><strong id="rFoamLtr">—</strong> L</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="calcNote">
+      Water = Total × ((100 − %) / 100) &nbsp;·&nbsp;
+      Foam = Total − Water &nbsp;·&nbsp;
+      Water: 8.33 lbs/gal &nbsp;·&nbsp;
+      Foam: gal × SG × 8.33 lbs/gal &nbsp;·&nbsp;
+      1 gal = 3.785 L &nbsp;·&nbsp;
+      1 lb = 0.4536 kg
+    </div>
+  </div>
+
+  <!-- ── EN Water Calculator ── -->
+  <div class="card">
+    <div class="section-label">
+      <span class="section-label-text teal">EN Water Additive Calculator</span>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="enInputRow">
+      <div class="field">
+        <div class="lbl">Water Volume</div>
+        <input type="number" id="enWaterAmt" inputmode="decimal" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <div class="lbl">Unit</div>
+        <div class="unitToggle">
+          <button id="btnGal" class="active" onclick="setUnit('gal')">Gallons</button>
+          <button id="btnLbs" onclick="setUnit('lbs')">Lbs</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="border:1px solid var(--border); border-radius: 10px; overflow:hidden;">
+      <table class="enTable">
+        <thead>
+          <tr>
+            <th>Additive</th>
+            <th class="right">Rate</th>
+            <th class="right">Grams</th>
+            <th class="right">Lbs (4 dec)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="chem-label">
+                <span class="chem-badge mgcl2">MgCl₂</span>
+                Magnesium Chloride
+              </div>
+            </td>
+            <td class="right sub-val" id="mgcl2Rate">—</td>
+            <td class="right val" id="mgcl2Grams">—</td>
+            <td class="right val" id="mgcl2Lbs">—</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="chem-label">
+                <span class="chem-badge cacl2">CaCl₂</span>
+                Calcium Chloride
+              </div>
+            </td>
+            <td class="right sub-val" id="cacl2Rate">—</td>
+            <td class="right val" id="cacl2Grams">—</td>
+            <td class="right val" id="cacl2Lbs">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="calcNote" style="margin-top:12px;">
+      MgCl₂: 0.1328 g/gal · 0.0159 g/lb &nbsp;·&nbsp;
+      CaCl₂: 0.3028 g/gal · 0.0363 g/lb &nbsp;·&nbsp;
+      1 lb = 453.592 g
+    </div>
+  </div>
+
+  <!-- ── Status Bar ── -->
+  <div class="statusBar">
+    <div class="statusBarInner">
+      <div class="statusLeft">
+        <span class="statusDot"></span>
+        <span id="statusText">Ready.</span>
+      </div>
+      <div class="statusRight">
+        <span class="statusUrl">nfmil.jonmercado.com</span>
+        <span class="pill">NF Milspec v1</span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+'use strict';
+
+/* ── Constants ──────────────────────────────────────────────────── */
+const WATER_LBS_GAL  = 8.33;
+const GAL_TO_L       = 3.78541;
+const LBS_TO_KG      = 0.453592;
+const GRAMS_TO_LBS   = 1 / 453.592;
+
+// EN Water additive rates
+const MGCL2_PER_GAL  = 0.1328;  // g/gal
+const MGCL2_PER_LB   = 0.0159;  // g/lb
+const CACL2_PER_GAL  = 0.3028;  // g/gal
+const CACL2_PER_LB   = 0.0363;  // g/lb
+
+/* ── State ──────────────────────────────────────────────────────── */
+let enUnit = 'gal'; // 'gal' or 'lbs'
+
+/* ── Helpers ────────────────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+const fmt   = (n, d = 2) => (isNaN(n) || n == null) ? '—' : Number(n).toFixed(d);
+const blank = val => (val === '' || val === null || val === undefined);
+
+/* ── Premix Calculation ─────────────────────────────────────────── */
+function recalcPremix() {
+  const total = parseFloat($('totalMix').value);
+  const pct   = parseFloat($('percentage').value);
+  const sg    = parseFloat($('specificGravity').value);
+
+  const valid = !isNaN(total) && total > 0 &&
+                !isNaN(pct)   && pct > 0 && pct < 100;
+
+  if (!valid) {
+    ['rWaterLbs','rWaterKg','rWaterGal','rWaterLtr',
+     'rFoamLbs','rFoamKg','rFoamGal','rFoamLtr'].forEach(id => {
+      const el = $(id);
+      if (id === 'rWaterLbs' || id === 'rFoamLbs') {
+        el.innerHTML = '—<span class="resultUnit">' + (id.includes('Water') ? 'lbs' : 'lbs') + '</span>';
+      } else {
+        el.textContent = '—';
+      }
+    });
+    $('liveLabel').textContent = 'Enter values';
+    $('liveLabel').className   = 'pill';
+    $('statusText').textContent = 'Ready.';
+    return;
+  }
+
+  const waterGal   = total * ((100 - pct) / 100);
+  const foamGal    = total - waterGal;
+  const waterLbs   = waterGal * WATER_LBS_GAL;
+  const foamDens   = (!isNaN(sg) && sg > 0) ? sg * WATER_LBS_GAL : WATER_LBS_GAL;
+  const foamLbs    = foamGal * foamDens;
+  const waterKg    = waterLbs * LBS_TO_KG;
+  const foamKg     = foamLbs  * LBS_TO_KG;
+
+  // Water
+  $('rWaterLbs').innerHTML   = fmt(waterLbs, 2) + '<span class="resultUnit"> lbs</span>';
+  $('rWaterKg').textContent  = fmt(waterKg,  3);
+  $('rWaterGal').textContent = fmt(waterGal, 2);
+  $('rWaterLtr').textContent = fmt(waterGal * GAL_TO_L, 2);
+
+  // Foam
+  $('rFoamLbs').innerHTML    = fmt(foamLbs, 2) + '<span class="resultUnit"> lbs</span>';
+  $('rFoamKg').textContent   = fmt(foamKg,  3);
+  $('rFoamGal').textContent  = fmt(foamGal, 2);
+  $('rFoamLtr').textContent  = fmt(foamGal * GAL_TO_L, 2);
+
+  $('liveLabel').textContent = 'Live';
+  $('liveLabel').className   = 'pill live';
+  $('statusText').textContent = `Water: ${fmt(waterLbs,2)} lbs · Foam: ${fmt(foamLbs,2)} lbs`;
+}
+
+/* ── EN Water Calculation ───────────────────────────────────────── */
+function recalcEN() {
+  const raw = parseFloat($('enWaterAmt').value);
+
+  if (isNaN(raw) || raw <= 0) {
+    $('mgcl2Grams').textContent = '—';
+    $('mgcl2Lbs').textContent   = '—';
+    $('mgcl2Rate').textContent  = '—';
+    $('cacl2Grams').textContent = '—';
+    $('cacl2Lbs').textContent   = '—';
+    $('cacl2Rate').textContent  = '—';
+    return;
+  }
+
+  let mgcl2g, cacl2g, rateStr;
+
+  if (enUnit === 'gal') {
+    mgcl2g  = raw * MGCL2_PER_GAL;
+    cacl2g  = raw * CACL2_PER_GAL;
+    rateStr = (n) => `${n} g/gal`;
+    $('mgcl2Rate').textContent = rateStr(MGCL2_PER_GAL);
+    $('cacl2Rate').textContent = rateStr(CACL2_PER_GAL);
+  } else {
+    mgcl2g  = raw * MGCL2_PER_LB;
+    cacl2g  = raw * CACL2_PER_LB;
+    $('mgcl2Rate').textContent = `${MGCL2_PER_LB} g/lb`;
+    $('cacl2Rate').textContent = `${CACL2_PER_LB} g/lb`;
+  }
+
+  const mgcl2lbs = mgcl2g * GRAMS_TO_LBS;
+  const cacl2lbs = cacl2g * GRAMS_TO_LBS;
+
+  $('mgcl2Grams').textContent = fmt(mgcl2g, 4) + ' g';
+  $('mgcl2Lbs').textContent   = fmt(mgcl2lbs, 4) + ' lbs';
+  $('cacl2Grams').textContent = fmt(cacl2g, 4) + ' g';
+  $('cacl2Lbs').textContent   = fmt(cacl2lbs, 4) + ' lbs';
+}
+
+/* ── Unit Toggle ────────────────────────────────────────────────── */
+function setUnit(unit) {
+  enUnit = unit;
+  $('btnGal').classList.toggle('active', unit === 'gal');
+  $('btnLbs').classList.toggle('active', unit === 'lbs');
+  recalcEN();
+}
+
+/* ── Event Listeners ────────────────────────────────────────────── */
+['totalMix', 'percentage', 'specificGravity'].forEach(id => {
+  $(id).addEventListener('input', recalcPremix);
+});
+
+$('enWaterAmt').addEventListener('input', recalcEN);
+</script>
+</body>
+</html>
