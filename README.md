@@ -22,9 +22,9 @@ Single-file, no build step, no dependencies.
 ### Premix Calculator
 - **Water (gal)** = Total Solution Mix × ((100 − %) / 100)
 - **Foam (gal)**  = Total Solution Mix − Water (gal)
-- **Water (lbs)** = Water (gal) × 8.33 lbs/gal
+- **Water (lbs)** = Water (gal) × 8.345 lbs/gal
 - **Water (kg)**  = Water (lbs) × 0.453592
-- **Foam (lbs)**  = Foam (gal) × SG × 8.33 lbs/gal
+- **Foam (lbs)**  = Foam (gal) × SG × 8.345 lbs/gal
 - **Foam (kg)**   = Foam (lbs) × 0.453592
 - **Volume (L)**  = gal × 3.785
 
@@ -46,4 +46,5 @@ Conversion: 1 lb = 453.592 g
 
 | Version | Notes           |
 |---------|-----------------|
-| v1      | Initial release |
+| v1      | Initial release                        |
+| v2      | Updated water weight: 8.33 → 8.345 lbs/gal |

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>NF Milspec Premix Calculator v1 | nfmil.jonmercado.com</title>
+  <title>NF Milspec Premix Calculator v2 | nfmil.jonmercado.com</title>
   <style>
     /* ─── Reset & Base ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -553,8 +553,8 @@
     <div class="calcNote">
       Water = Total × ((100 − %) / 100) &nbsp;·&nbsp;
       Foam = Total − Water &nbsp;·&nbsp;
-      Water: 8.33 lbs/gal &nbsp;·&nbsp;
-      Foam: gal × SG × 8.33 lbs/gal &nbsp;·&nbsp;
+      Water: 8.345 lbs/gal &nbsp;·&nbsp;
+      Foam: gal × SG × 8.345 lbs/gal &nbsp;·&nbsp;
       1 gal = 3.785 L &nbsp;·&nbsp;
       1 lb = 0.4536 kg
     </div>
@@ -634,7 +634,7 @@
       </div>
       <div class="statusRight">
         <span class="statusUrl">nfmil.jonmercado.com</span>
-        <span class="pill">NF Milspec v1</span>
+        <span class="pill">NF Milspec v2</span>
       </div>
     </div>
   </div>
@@ -645,7 +645,7 @@
 'use strict';
 
 /* ── Constants ──────────────────────────────────────────────────── */
-const WATER_LBS_GAL  = 8.33;
+const WATER_LBS_GAL  = 8.345;
 const GAL_TO_L       = 3.78541;
 const LBS_TO_KG      = 0.453592;
 const GRAMS_TO_LBS   = 1 / 453.592;
