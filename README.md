@@ -1,4 +1,4 @@
-# NF Milspec Premix Calculator — v1
+# NF Milspec Premix Calculator — v3
 
 National Foam Milspec Premix Calculator for nfmil.jonmercado.com.
 Single-file, no build step, no dependencies.
@@ -40,6 +40,18 @@ Input water in gallons or lbs. Results in grams and lbs (4 decimal places).
 
 Conversion: 1 lb = 453.592 g
 
+### Track Remaining To Add
+Sits below the Calculated Results table. As you physically add water or foam
+concentrate, enter the amount (in lbs) into the corresponding field and press
+**Subtract** — the card updates to show what's still left to add, in both
+lbs and gal, based on the current Water/Foam Required totals.
+
+- **Remaining** = Total Required − Sum of amounts subtracted so far
+- Remaining is floored at 0 and turns green once fully added
+- **Clear Added** resets both trackers back to the full calculated total
+- Changing the Premix Parameters recalculates the totals but keeps the
+  amounts already subtracted, so remaining updates accordingly
+
 ---
 
 ## Version History
@@ -48,3 +60,4 @@ Conversion: 1 lb = 453.592 g
 |---------|-----------------|
 | v1      | Initial release                        |
 | v2      | Updated water weight: 8.33 → 8.345 lbs/gal |
+| v3      | Added "Track Remaining To Add" — simple subtract/clear tracker for water and foam concentrate as they're physically added |

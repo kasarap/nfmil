@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>NF Milspec Premix Calculator v2 | nfmil.jonmercado.com</title>
+  <title>NF Milspec Premix Calculator v3 | nfmil.jonmercado.com</title>
   <style>
     /* ─── Reset & Base ─────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -313,6 +313,59 @@
       border-top: 1px solid var(--border);
     }
 
+    /* ─── Track Remaining ──────────────────────────────────────────── */
+    .trackerInputRow {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .trackerInputRow input {
+      flex: 1;
+      font-size: 13px;
+      padding: 9px 10px;
+    }
+    .trackerBtn {
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--blue-border);
+      background: var(--blue-bg);
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
+    }
+    .trackerBtn:hover  { background: var(--blue); color: #fff; }
+    .trackerBtn:active { transform: scale(.97); }
+    .resultCard.foam .trackerBtn {
+      border-color: var(--accent-glow);
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+    .resultCard.foam .trackerBtn:hover { background: var(--accent); color: #fff; }
+
+    .resultMain.depleted { color: var(--green); }
+
+    .trackerFooter {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+    .clearBtn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border2);
+      background: var(--card2);
+      color: var(--muted2);
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: border-color .15s, color .15s, background .15s;
+    }
+    .clearBtn:hover  { color: var(--text); background: var(--card3); }
+    .clearBtn:active { transform: scale(.97); }
+
     /* ─── EN Water Table ───────────────────────────────────────────── */
     .enTable {
       width: 100%;
@@ -560,7 +613,50 @@
     </div>
   </div>
 
+  <!-- ── Track Remaining To Add ── -->
+  <div class="card">
+    <div class="section-label">
+      <span class="section-label-text blue">Track Remaining To Add</span>
+      <span class="section-line"></span>
+    </div>
+
+    <div class="resultsGrid">
+
+      <!-- Water Remaining -->
+      <div class="resultCard water">
+        <div class="resultTitle">Water Remaining</div>
+        <div class="resultMain" id="rWaterRemainLbs">—<span class="resultUnit">lbs</span></div>
+        <div class="resultAltRow">
+          <span class="resultAlt"><strong id="rWaterRemainGal">—</strong> gal</span>
+        </div>
+        <div class="trackerInputRow">
+          <input type="number" id="waterAddedInput" inputmode="decimal" placeholder="Amount added (lbs)" min="0" step="0.01" />
+          <button class="trackerBtn" id="btnSubWater" type="button">Subtract</button>
+        </div>
+      </div>
+
+      <!-- Foam Remaining -->
+      <div class="resultCard foam">
+        <div class="resultTitle">Foam Remaining</div>
+        <div class="resultMain" id="rFoamRemainLbs">—<span class="resultUnit">lbs</span></div>
+        <div class="resultAltRow">
+          <span class="resultAlt"><strong id="rFoamRemainGal">—</strong> gal</span>
+        </div>
+        <div class="trackerInputRow">
+          <input type="number" id="foamAddedInput" inputmode="decimal" placeholder="Amount added (lbs)" min="0" step="0.01" />
+          <button class="trackerBtn" id="btnSubFoam" type="button">Subtract</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="trackerFooter">
+      <button class="clearBtn" id="btnClearAdded" type="button">Clear Added</button>
+    </div>
+  </div>
+
   <!-- ── EN Water Calculator ── -->
+
   <div class="card">
     <div class="section-label">
       <span class="section-label-text teal">EN Water Additive Calculator</span>
@@ -634,7 +730,7 @@
       </div>
       <div class="statusRight">
         <span class="statusUrl">nfmil.jonmercado.com</span>
-        <span class="pill">NF Milspec v2</span>
+        <span class="pill">NF Milspec v3</span>
       </div>
     </div>
   </div>
@@ -658,6 +754,13 @@ const CACL2_PER_LB   = 0.0363;  // g/lb
 
 /* ── State ──────────────────────────────────────────────────────── */
 let enUnit = 'gal'; // 'gal' or 'lbs'
+
+// Track Remaining To Add
+let waterTotalLbs  = null;  // current calculated water total (lbs), null = no valid calc
+let foamTotalLbs   = null;  // current calculated foam total (lbs)
+let foamDensGlobal = WATER_LBS_GAL;
+let waterAddedLbs  = 0;     // cumulative amount subtracted (added) so far
+let foamAddedLbs   = 0;
 
 /* ── Helpers ────────────────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
@@ -686,6 +789,10 @@ function recalcPremix() {
     $('liveLabel').textContent = 'Enter values';
     $('liveLabel').className   = 'pill';
     $('statusText').textContent = 'Ready.';
+
+    waterTotalLbs = null;
+    foamTotalLbs  = null;
+    updateTrackers();
     return;
   }
 
@@ -712,6 +819,67 @@ function recalcPremix() {
   $('liveLabel').textContent = 'Live';
   $('liveLabel').className   = 'pill live';
   $('statusText').textContent = `Water: ${fmt(waterLbs,2)} lbs · Foam: ${fmt(foamLbs,2)} lbs`;
+
+  waterTotalLbs   = waterLbs;
+  foamTotalLbs    = foamLbs;
+  foamDensGlobal  = foamDens;
+  updateTrackers();
+}
+
+/* ── Track Remaining To Add ────────────────────────────────────── */
+function updateTrackers() {
+  renderTracker('rWaterRemainLbs', 'rWaterRemainGal', waterTotalLbs, waterAddedLbs, WATER_LBS_GAL);
+  renderTracker('rFoamRemainLbs',  'rFoamRemainGal',  foamTotalLbs,  foamAddedLbs,  foamDensGlobal);
+}
+
+function renderTracker(lbsId, galId, totalLbs, addedLbs, densLbsGal) {
+  const lbsEl = $(lbsId);
+  const galEl = $(galId);
+
+  if (totalLbs == null) {
+    lbsEl.innerHTML = '—<span class="resultUnit">lbs</span>';
+    lbsEl.classList.remove('depleted');
+    galEl.textContent = '—';
+    return;
+  }
+
+  const remain = Math.max(totalLbs - addedLbs, 0);
+  lbsEl.innerHTML = fmt(remain, 2) + '<span class="resultUnit"> lbs</span>';
+  galEl.textContent = fmt(remain / densLbsGal, 2);
+  lbsEl.classList.toggle('depleted', remain <= 0.005);
+}
+
+function subtractWater() {
+  if (waterTotalLbs == null) return setStatusMsg('Enter premix parameters first.');
+  const val = parseFloat($('waterAddedInput').value);
+  if (isNaN(val) || val <= 0) return setStatusMsg('Enter an amount to subtract.');
+  waterAddedLbs += val;
+  $('waterAddedInput').value = '';
+  updateTrackers();
+  setStatusMsg(`Subtracted ${fmt(val,2)} lbs water.`);
+}
+
+function subtractFoam() {
+  if (foamTotalLbs == null) return setStatusMsg('Enter premix parameters first.');
+  const val = parseFloat($('foamAddedInput').value);
+  if (isNaN(val) || val <= 0) return setStatusMsg('Enter an amount to subtract.');
+  foamAddedLbs += val;
+  $('foamAddedInput').value = '';
+  updateTrackers();
+  setStatusMsg(`Subtracted ${fmt(val,2)} lbs foam concentrate.`);
+}
+
+function clearAdded() {
+  waterAddedLbs = 0;
+  foamAddedLbs  = 0;
+  $('waterAddedInput').value = '';
+  $('foamAddedInput').value  = '';
+  updateTrackers();
+  setStatusMsg('Tracked amounts cleared.');
+}
+
+function setStatusMsg(msg) {
+  $('statusText').textContent = msg;
 }
 
 /* ── EN Water Calculation ───────────────────────────────────────── */
@@ -766,6 +934,16 @@ function setUnit(unit) {
 });
 
 $('enWaterAmt').addEventListener('input', recalcEN);
+
+/* ── Tracker Event Listeners ────────────────────────────────────── */
+$('btnSubWater').addEventListener('click', subtractWater);
+$('btnSubFoam').addEventListener('click', subtractFoam);
+$('btnClearAdded').addEventListener('click', clearAdded);
+
+$('waterAddedInput').addEventListener('keydown', e => { if (e.key === 'Enter') subtractWater(); });
+$('foamAddedInput').addEventListener('keydown',  e => { if (e.key === 'Enter') subtractFoam();  });
+
+updateTrackers();
 </script>
 </body>
 </html>
